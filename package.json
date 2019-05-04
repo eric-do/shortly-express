@@ -17,13 +17,15 @@
   "dependencies": {
     "bluebird": "^3.3.4",
     "body-parser": "^1.15.0",
+    "browser-cookies": "^1.2.0",
     "ejs": "^2.4.1",
     "express": "^4.13.4",
     "express-partials": "^0.3.0",
     "lodash": "^4.17.4",
     "mysql": "^2.12.0",
     "node-mocks-http": "^1.6.1",
-    "request": "^2.34.0"
+    "request": "^2.34.0",
+    "sequelize": "^5.8.3"
   },
   "devDependencies": {
     "chai": "^3.5.0",
