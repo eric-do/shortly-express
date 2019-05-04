@@ -7,10 +7,11 @@ const parseCookies = (req, res, next) => {
       cookieObject[pair[0]] = pair[1];
     });
     req.cookies = cookieObject;
+    next(req, res);
+  } else {
+    next(req, res);
   }
-  next();
 };
-
 
 // name=fayola; city=San%20Francisco
 

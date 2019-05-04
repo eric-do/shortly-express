@@ -8,20 +8,34 @@ module.exports.createSession = (req, res, next) => {
   // Query user table for userid
   // Insert userId (using request data) into sessions table on row of session hash
   // Pass on session hash to return to browser in cookie
+
+
   models.Sessions.create()
-    .then((a, b, c) => {
-      console.log(a, b, c);
-      return models.Users.get({username: req.body.username});
-    })
-    .then(userObj => {
-      return models.Sessions.update({hash: sess.hash}, {userId: userObj.id});
-    })
-    .then(hashObj => {
-      next(hashObj.hash);
-    })
-    .catch(err => {
-      console.log(err);
-    });
+    .then(session => {
+      console.log(session);
+      //  get session row id
+      //  get userId from users table using username
+      //  use request to update session row with userId
+        models.Users.get({username: req.body.username})
+          .then(userRow => {
+            console.log('phase 1', userRow);
+            models.Sessions.update({id: session.insertId}, {userId: userRow.id})
+              .then(okPacket => {
+                console.log('phase 2', okPacket);
+                models.Sessions.get({id: session.insertId})
+                  .then(sessionRow => {
+                    console.log('phase 3', sessionRow);
+                    // res.cookie('sessionId', sessionRow.hash);
+                    next(sessionRow.hash);
+                    // res.status(201);
+                    // res.end();
+                  })
+              })
+          })
+        })
+        .catch(err => {
+          console.log(err);
+        })
 };
 
 /************************************************************/

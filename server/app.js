@@ -20,11 +20,13 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('/', 
   (req, res) => {
-
-    cookieParser(req, res, () => {
-
-      //  using cookie object values to authenticate
-      res.render('signup');
+    cookieParser(req, res, (req, res) => {
+      if (req.cookies) {
+        //  also validate session property
+        res.render('index');
+      } else {
+        res.render('signup');
+      }
     });
   });
 
@@ -51,7 +53,7 @@ app.post('/links',
       // send back a 404 if link is not valid
       return res.sendStatus(404);
     }
-
+    
     return models.Links.get({ url })
       .then(link => {
         if (link) {
@@ -118,6 +120,40 @@ app.post('/signup', (req, res, next) => {
   //   console.log(hash);
   // });
 
+});
+
+app.get('/login', (req, res) => {
+  res.render('login');
+});
+
+app.post('/login', (req, res, next) => {
+  // Input: request, response, next (callback)
+  // Return: nothing (async)
+  // Get request body: user object with username/password
+  // Get the user's row from user.get, passing in username as an option
+  // Do a password compare, passing in attempted, hashed password, salt
+  // If the compare is successful, call createSession, passing in req, res, next
+    // Next should take the received hash, and set the user's cookie to the hash value 
+    // i.e. Send a cookie with session hash
+    // Then direct the user to the index page
+  // If the compare is unsuccessful, reload login page
+  console.log('posting to login', req.body);
+  models.Users.get({username: req.body.username})
+    .then(rowObj => {
+      console.log('Query for user was successful');
+      console.log(rowObj);
+      if (models.Users.compare(req.body.password, rowObj.password, rowObj.salt)) {
+        Auth.createSession(req, res, (hash) => {
+          console.log(hash);
+          res.cookie('session', hash);
+          res.writeHead(201, {'location': '/'});
+          res.end();
+        });
+      }
+    })
+    .catch(err => {
+      console.log(err);
+    });
 });
 
 /************************************************************/
