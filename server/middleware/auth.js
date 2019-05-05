@@ -3,39 +3,47 @@ const Promise = require('bluebird');
 
 module.exports.createSession = (req, res, next) => {
   // Input: request object with a cookie property containing cookie object
-  // Accessed parsed cookie
-  // Create record with session hash in sessions table
-  // Query user table for userid
-  // Insert userId (using request data) into sessions table on row of session hash
-  // Pass on session hash to return to browser in cookie
+  /**
+   * check request for session in cookies
+   * if cookie session present
+   *    look up session in table
+   *    assign session info to session property on request
+   * if no cookie session present
+   *    create session
+   *    assign session info to session property on request
+   * call next with request and response parameters
+   */
 
-
-  models.Sessions.create()
-    .then(session => {
-      console.log(session);
-      //  get session row id
-      //  get userId from users table using username
-      //  use request to update session row with userId
-        models.Users.get({username: req.body.username})
-          .then(userRow => {
-            console.log('phase 1', userRow);
-            models.Sessions.update({id: session.insertId}, {userId: userRow.id})
-              .then(okPacket => {
-                console.log('phase 2', okPacket);
-                models.Sessions.get({id: session.insertId})
-                  .then(sessionRow => {
-                    console.log('phase 3', sessionRow);
-                    // res.cookie('sessionId', sessionRow.hash);
-                    next(sessionRow.hash);
-                    // res.status(201);
-                    // res.end();
-                  })
-              })
-          })
-        })
-        .catch(err => {
-          console.log(err);
-        })
+  console.log('creating session');
+  if (req.cookies.session) {
+    // look up session
+    //  check if existing session userId matches current visitor username
+    models.Sessions.get({hash: req.cookies.session})
+      .then(sessionRecord => {
+        req.session = sessionRecord;
+        res.cookie('shortlyid', req.session.hash);
+        next();
+      })
+      .catch(err => {
+        console.log(err);
+        next();
+      });
+  } else {
+    models.Sessions.create()
+      .then(session => {
+        console.log('created session');
+        return models.Sessions.get({id: session.insertId});
+      })
+      .then(sessionRecord => {
+        req.session = sessionRecord.hash;
+        res.cookie('shortlyid', req.session.hash);
+        next();
+      })
+      .catch(err => {
+        console.log(err);
+        next();
+      });
+  }
 };
 
 /************************************************************/

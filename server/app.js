@@ -14,20 +14,16 @@ app.set('view engine', 'ejs');
 app.use(partials());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser);
+app.use(Auth.createSession);
 app.use(express.static(path.join(__dirname, '../public')));
-
 
 
 app.get('/', 
   (req, res) => {
-    cookieParser(req, res, (req, res) => {
-      if (req.cookies) {
-        //  also validate session property
-        res.render('index');
-      } else {
-        res.render('signup');
-      }
-    });
+    res.cookie('session', req.session.hash);
+    res.writeHead(200);
+    res.render('index');
   });
 
 app.get('/create', 
@@ -53,7 +49,7 @@ app.post('/links',
       // send back a 404 if link is not valid
       return res.sendStatus(404);
     }
-    
+
     return models.Links.get({ url })
       .then(link => {
         if (link) {
@@ -90,7 +86,7 @@ app.post('/links',
 //  create signup route for users who have no cookie or invalid one
 
 app.post('/signup', (req, res, next) => {
-  console.log(req.body);
+  console.log('in signup', req.body);
   // check if user exists
   models.Users.get({username: req.body.username})
     .then(user => {
@@ -133,22 +129,25 @@ app.post('/login', (req, res, next) => {
   // Get the user's row from user.get, passing in username as an option
   // Do a password compare, passing in attempted, hashed password, salt
   // If the compare is successful, call createSession, passing in req, res, next
-    // Next should take the received hash, and set the user's cookie to the hash value 
-    // i.e. Send a cookie with session hash
-    // Then direct the user to the index page
+  // Next should take the received hash, and set the user's cookie to the hash value 
+  // i.e. Send a cookie with session hash
+  // Then direct the user to the index page
   // If the compare is unsuccessful, reload login page
   console.log('posting to login', req.body);
   models.Users.get({username: req.body.username})
     .then(rowObj => {
       console.log('Query for user was successful');
       console.log(rowObj);
-      if (models.Users.compare(req.body.password, rowObj.password, rowObj.salt)) {
+      if (rowObj && models.Users.compare(req.body.password, rowObj.password, rowObj.salt)) {
         Auth.createSession(req, res, (hash) => {
           console.log(hash);
           res.cookie('session', hash);
           res.writeHead(201, {'location': '/'});
           res.end();
         });
+      } else {
+        res.writeHead(201, {'location': '/login'});
+        res.end();
       }
     })
     .catch(err => {

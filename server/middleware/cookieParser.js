@@ -4,16 +4,13 @@ const parseCookies = (req, res, next) => {
     let cookies = req.headers.cookie.split(';');
     cookies.forEach((cookie) => {
       let pair = cookie.split('=');
-      cookieObject[pair[0]] = pair[1];
-    });
-    req.cookies = cookieObject;
-    next(req, res);
-  } else {
-    next(req, res);
+      cookieObject[pair[0].trim()] = pair[1];
+    }); 
   }
+  req.cookies = cookieObject;
+  console.log('cookies parsed:', req.cookies);
+  next();
 };
-
-// name=fayola; city=San%20Francisco
 
 module.exports = parseCookies;
 
